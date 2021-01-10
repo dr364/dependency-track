@@ -33,6 +33,7 @@
     <packaging>war</packaging>
     <version>4.2.0-SNAPSHOT</version>
 
+
     <name>Dependency-Track</name>
     <url>https://dependencytrack.org/</url>
     <description>Dependency-Track is an intelligent component analysis platform that allows organizations to identify and reduce risk in the software supply chain.</description>

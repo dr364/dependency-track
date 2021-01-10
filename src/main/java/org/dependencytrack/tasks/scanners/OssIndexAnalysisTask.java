@@ -152,9 +152,13 @@ public class OssIndexAnalysisTask extends BaseComponentAnalyzerTask implements C
      */
     public void analyze(final List<Component> components) {
         final Pageable<Component> paginatedComponents = new Pageable<>(100, components);
+        int totalAnalysedFromCache;
+
         while (!paginatedComponents.isPaginationComplete()) {
+            totalAnalysedFromCache = 0;
             final List<String> coordinates = new ArrayList<>();
             final List<Component> paginatedList = paginatedComponents.getPaginatedList();
+
             for (final Component component: paginatedList) {
                 if (!component.isInternal() && isCapable(component.getPurl())) {
                     if (!isCacheCurrent(Vulnerability.Source.OSSINDEX, API_BASE_URL, component.getPurl().toString())) {
@@ -162,22 +166,24 @@ public class OssIndexAnalysisTask extends BaseComponentAnalyzerTask implements C
                         coordinates.add(minimizePurl(component.getPurl()));
                     } else {
                         applyAnalysisFromCache(Vulnerability.Source.OSSINDEX, API_BASE_URL, component.getPurl().toString(), component, getAnalyzerIdentity());
+                        totalAnalysedFromCache++;
                     }
                 }
             }
             if (CollectionUtils.isEmpty(coordinates)) {
-                return;
+                LOGGER.info("Applying analysis for " + totalAnalysedFromCache + " component(s) from cache");
+            } else {
+                final JSONObject json = new JSONObject();
+                json.put("coordinates", coordinates);
+                try {
+                    final List<ComponentReport> report = submit(json);
+                    processResults(report, paginatedList);
+                } catch (UnirestException e) {
+                    handleRequestException(LOGGER, e);
+                }
+                LOGGER.info("Analyzing " + coordinates.size() + " component(s) (" + totalAnalysedFromCache + " applied from cached analysis)");
+                doThrottleDelay();
             }
-            final JSONObject json = new JSONObject();
-            json.put("coordinates", coordinates);
-            try {
-                final List<ComponentReport> report = submit(json);
-                processResults(report, paginatedList);
-            } catch (UnirestException e) {
-                handleRequestException(LOGGER, e);
-            }
-            LOGGER.info("Analyzing " + coordinates.size() + " component(s)");
-            doThrottleDelay();
             paginatedComponents.nextPage();
         }
     }

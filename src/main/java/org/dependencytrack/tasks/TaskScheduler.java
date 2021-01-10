@@ -58,26 +58,8 @@ public final class TaskScheduler extends AlpineTaskScheduler {
         // Creates a new event that executes every 6 hours (21600000) after an initial 10 second (10000) delay
         scheduleEvent(new LdapSyncEvent(), 10000, 21600000);
 
-        // Creates a new event that executes every 24 hours (86400000) after an initial 10 second (10000) delay
-        scheduleEvent(new NpmAdvisoryMirrorEvent(), 10000, 86400000);
-
-        // Creates a new event that executes every 24 hours (86400000) after an initial 1 minute (60000) delay
-        scheduleEvent(new NistMirrorEvent(), 60000, 86400000);
-
-        // Creates a new event that executes every 24 hours (86400000) after an initial 1 minute (60000) delay
-        scheduleEvent(new VulnDbSyncEvent(), 60000, 86400000);
-
-        // Creates a new event that executes every 1 hour (3600000) after an initial 10 second (10000) delay
-        scheduleEvent(new MetricsUpdateEvent(MetricsUpdateEvent.Type.PORTFOLIO), 10000, 3600000);
-
-        // Creates a new event that executes every 1 hour (3600000) after an initial 10 second (10000) delay
-        scheduleEvent(new MetricsUpdateEvent(MetricsUpdateEvent.Type.VULNERABILITY), 10000, 3600000);
-
         // Creates a new event that executes every 6 hours (21600000) after an initial 6 hour delay
         scheduleEvent(new VulnerabilityAnalysisEvent(), 21600000, 21600000);
-
-        // Creates a new event that executes every 24 hours (86400000) after an initial 1 hour (3600000) delay
-        scheduleEvent(new RepositoryMetaEvent(), 3600000, 86400000);
 
         // Creates a new event that executes every 6 hours (21600000) after an initial 1 hour (3600000) delay
         scheduleEvent(new InternalComponentIdentificationEvent(), 3600000, 21600000);
@@ -89,6 +71,14 @@ public final class TaskScheduler extends AlpineTaskScheduler {
         scheduleConfigurableTask(300000, FORTIFY_SSC_ENABLED, FORTIFY_SSC_SYNC_CADENCE, new FortifySscUploadEventAbstract());
         scheduleConfigurableTask(300000, DEFECTDOJO_ENABLED, DEFECTDOJO_SYNC_CADENCE, new DefectDojoUploadEventAbstract());
         scheduleConfigurableTask(300000, KENNA_ENABLED, KENNA_SYNC_CADENCE, new KennaSecurityUploadEventAbstract());
+
+        scheduleConfigurableTask(10000, GENERAL_MIRROR_SYNC_PERIOD, new NpmAdvisoryMirrorEvent());
+        scheduleConfigurableTask(10000, GENERAL_MIRROR_SYNC_PERIOD, new NistMirrorEvent());
+        scheduleConfigurableTask(10000, GENERAL_MIRROR_SYNC_PERIOD, new VulnDbSyncEvent());
+        scheduleConfigurableTask(3600000, GENERAL_MIRROR_SYNC_PERIOD, new RepositoryMetaEvent());
+
+        scheduleConfigurableTask(10000, GENERAL_METRICS_UPDATE_PERIOD, new MetricsUpdateEvent(MetricsUpdateEvent.Type.PORTFOLIO));
+        scheduleConfigurableTask(10000, GENERAL_METRICS_UPDATE_PERIOD, new MetricsUpdateEvent(MetricsUpdateEvent.Type.VULNERABILITY));
     }
 
     /**
@@ -112,6 +102,13 @@ public final class TaskScheduler extends AlpineTaskScheduler {
             } else {
                 return;
             }
+            scheduleConfigurableTask(initialDelay, constraint, event);
+        }
+    }
+
+    private void scheduleConfigurableTask(final long initialDelay, final ConfigPropertyConstants constraint,
+                                          final Event event) {
+        try (QueryManager qm = new QueryManager()) {
             final ConfigProperty property = qm.getConfigProperty(constraint.getGroupName(), constraint.getPropertyName());
             if (property != null && property.getPropertyValue() != null) {
                 final Integer minutes = Integer.valueOf(property.getPropertyValue());

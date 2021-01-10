@@ -24,6 +24,9 @@ public enum ConfigPropertyConstants {
 
     GENERAL_BASE_URL("general", "base.url", null, PropertyType.URL, "URL used to construct links back to Dependency-Track from external systems"),
     GENERAL_BADGE_ENABLED("general", "badge.enabled", "false", PropertyType.BOOLEAN, "Flag to enable/disable SVG badge support from metrics"),
+    GENERAL_CACHE_PERIOD("general", "cache.period", "86400000", PropertyType.NUMBER, "Configure the period used for caching scan results"),
+    GENERAL_MIRROR_SYNC_PERIOD("general", "mirror.period", "86400000", PropertyType.NUMBER, "Configure the period between syncing with vulnerability mirrors"),
+    GENERAL_METRICS_UPDATE_PERIOD("general", "metrics.period", "3600000", PropertyType.NUMBER, "Configure the period between scheduled metrics updates"),
     EMAIL_SMTP_ENABLED("email", "smtp.enabled", "false", PropertyType.BOOLEAN, "Flag to enable/disable SMTP"),
     EMAIL_SMTP_FROM_ADDR("email", "smtp.from.address", null, PropertyType.STRING, "The from email address to use to send output SMTP mail"),
     EMAIL_SMTP_SERVER_HOSTNAME("email", "smtp.server.hostname", null, PropertyType.STRING, "The hostname or IP address of the SMTP mail server"),

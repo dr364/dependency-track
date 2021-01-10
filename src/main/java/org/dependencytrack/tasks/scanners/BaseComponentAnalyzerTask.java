@@ -42,6 +42,8 @@ import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import java.util.Date;
 
+import static org.dependencytrack.model.ConfigPropertyConstants.GENERAL_CACHE_PERIOD;
+
 /**
  * A base class that has logic common or useful to all classes that extend it.
  *
@@ -125,12 +127,13 @@ public abstract class BaseComponentAnalyzerTask implements ScanTask {
     protected boolean isCacheCurrent(Vulnerability.Source source, String targetHost, String target) {
         try (QueryManager qm = new QueryManager()) {
             boolean isCacheCurrent = false;
+            final ConfigProperty cachePeriod = qm.getConfigProperty(GENERAL_CACHE_PERIOD.getGroupName(), GENERAL_CACHE_PERIOD.getPropertyName());
             ComponentAnalysisCache cac = qm.getComponentAnalysisCache(ComponentAnalysisCache.CacheType.VULNERABILITY, targetHost, source.name(), target);
             if (cac != null) {
                 final Date now = new Date();
                 if (now.getTime() > cac.getLastOccurrence().getTime()) {
                     final long delta = now.getTime() - cac.getLastOccurrence().getTime();
-                    isCacheCurrent = delta <= 86400000; // TODO: Default to 24 hours. Make this configurable in a future release
+                    isCacheCurrent = delta <= Integer.valueOf(cachePeriod.getPropertyValue()); // Determine the length of time to retain a cache based on a configurable setting
                 }
             }
             if (isCacheCurrent) {
